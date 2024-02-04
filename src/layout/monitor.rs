@@ -174,8 +174,11 @@ impl<W: LayoutElement> Monitor<W> {
 
     pub fn clean_up_workspaces(&mut self) {
         assert!(self.workspace_switch.is_none());
-
+        let minimum_workspaces = 10;
         for idx in (0..self.workspaces.len() - 1).rev() {
+            if idx < minimum_workspaces {
+                break;
+            }
             if self.active_workspace_idx == idx {
                 continue;
             }
