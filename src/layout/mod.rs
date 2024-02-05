@@ -389,8 +389,14 @@ impl<W: LayoutElement> Layout<W> {
 
                 workspaces.reverse();
 
-                // Make sure there's always an empty workspace.
-                workspaces.push(Workspace::new(output.clone(), self.options.clone()));
+                // Make sure there's always at least minimum workspaces.
+                // Not entirely sure we want this for new monitors though?
+                // In general stable workspaces gets more complicated with more monitors :thinking:
+                let minimum_workspaces: usize = 10;
+                let missing_this_many = minimum_workspaces.saturating_sub(workspaces.len());
+                for _i in 0..missing_this_many {
+                    workspaces.push(Workspace::new(output.clone(), self.options.clone()));
+                }
 
                 for ws in &mut workspaces {
                     ws.set_output(Some(output.clone()));
@@ -404,8 +410,12 @@ impl<W: LayoutElement> Layout<W> {
                 }
             }
             MonitorSet::NoOutputs { mut workspaces } => {
-                // We know there are no empty workspaces there, so add one.
-                workspaces.push(Workspace::new(output.clone(), self.options.clone()));
+                // We know there are no empty workspaces there, so add the minimu.
+                let minimum_workspaces: usize = 10;
+                let missing_this_many = minimum_workspaces.saturating_sub(workspaces.len());
+                for _i in 0..missing_this_many {
+                    workspaces.push(Workspace::new(output.clone(), self.options.clone()));
+                }
 
                 for workspace in &mut workspaces {
                     workspace.set_output(Some(output.clone()));
