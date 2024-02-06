@@ -21,17 +21,24 @@ impl WlrLayerShellHandler for State {
         &mut self,
         surface: WlrLayerSurface,
         wl_output: Option<WlOutput>,
-        _layer: Layer,
+        layer: Layer,
         namespace: String,
     ) {
-        let output = wl_output
-            .as_ref()
-            .and_then(Output::from_resource)
-            .or_else(|| self.niri.layout.active_output().cloned())
-            .unwrap();
+        // Should probably be OK just ignore this if we have no output to work with
+        let output = match wl_output.as_ref().and_then(Output::from_resource) {
+            None => {
+                debug!("Missing output for layer: {layer:?} in namespace: {namespace}");
+                return;
+            }
+            Some(out) => out,
+        };
         let mut map = layer_map_for_output(&output);
-        map.map_layer(&LayerSurface::new(surface, namespace))
-            .unwrap();
+        match map.map_layer(&LayerSurface::new(surface, namespace)) {
+            Err(err) => {
+                debug!("Failed to create LayerSurface: {err}");
+            }
+            Ok(_) => {}
+        }
     }
 
     fn layer_destroyed(&mut self, surface: WlrLayerSurface) {
