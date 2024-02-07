@@ -25,9 +25,14 @@ impl WlrLayerShellHandler for State {
         namespace: String,
     ) {
         // Should probably be OK just ignore this if we have no output to work with
-        let output = match wl_output.as_ref().and_then(Output::from_resource) {
+        let output = match wl_output
+            .as_ref()
+            .and_then(Output::from_resource)
+            .or_else(|| self.niri.layout.active_output().cloned())
+        {
             None => {
-                debug!("Missing output for layer: {layer:?} in namespace: {namespace}");
+                let active = self.niri.layout.active_output().cloned();
+                debug!("No output to put requested layer surface, {surface:?} on {layer:?} layer, wl_output: {wl_output:?}, active output {active:?}");
                 return;
             }
             Some(out) => out,
