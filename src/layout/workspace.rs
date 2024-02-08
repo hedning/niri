@@ -1545,7 +1545,7 @@ impl<W: LayoutElement> Column<W> {
                 }
             })
             .collect::<Vec<_>>();
-        let mut height_left = self.working_area.size.h - self.options.gaps;
+        let mut height_left = self.working_area.size.h;
         let mut auto_tiles_left = self.tiles.len();
 
         // Subtract all fixed-height tiles.
