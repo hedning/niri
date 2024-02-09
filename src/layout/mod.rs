@@ -451,7 +451,12 @@ impl<W: LayoutElement> Layout<W> {
                 }
 
                 // Get rid of empty workspaces.
-                workspaces.retain(|ws| ws.has_windows());
+                // Handle minimum workspaces
+                let minimum_workspaces: usize = 10;
+                if workspaces.len() > minimum_workspaces {
+                    // workspaces[0..minimum_workspaces] + ;
+                    // workspaces.retain(|ws| ws.has_windows());
+                }
 
                 if monitors.is_empty() {
                     // Removed the last monitor.
@@ -1241,10 +1246,10 @@ impl<W: LayoutElement> Layout<W> {
             } => (monitors, primary_idx, active_monitor_idx),
             MonitorSet::NoOutputs { workspaces } => {
                 for workspace in workspaces {
-                    assert!(
-                        workspace.has_windows(),
-                        "with no outputs there cannot be empty workspaces"
-                    );
+                    // assert!(
+                    //     workspace.has_windows(),
+                    //     "with no outputs there cannot be empty workspaces"
+                    // );
 
                     assert_eq!(
                         workspace.options, self.options,
