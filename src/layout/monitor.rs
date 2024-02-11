@@ -188,6 +188,10 @@ impl<W: LayoutElement> Monitor<W> {
             if is_active {
                 continue;
             }
+            // Always keep an extra empty workspace alive
+            if idx == self.workspaces.len() - 1 {
+                continue;
+            }
 
             if !has_windows {
                 self.workspaces.remove(idx);
