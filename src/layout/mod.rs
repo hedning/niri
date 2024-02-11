@@ -404,12 +404,8 @@ impl<W: LayoutElement> Layout<W> {
                 }
             }
             MonitorSet::NoOutputs { mut workspaces } => {
-                // We know there are no empty workspaces there, so add the minimu.
-                let minimum_workspaces: usize = 10;
-                let missing_this_many = minimum_workspaces.saturating_sub(workspaces.len());
-                for _i in 0..missing_this_many {
-                    workspaces.push(Workspace::new(output.clone(), self.options.clone()));
-                }
+                // We know there are no empty workspaces there, so add one.
+                workspaces.push(Workspace::new(output.clone(), self.options.clone()));
 
                 for workspace in &mut workspaces {
                     workspace.set_output(Some(output.clone()));
