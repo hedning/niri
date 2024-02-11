@@ -18,6 +18,8 @@ use crate::render_helpers::renderer::NiriRenderer;
 use crate::swipe_tracker::SwipeTracker;
 use crate::utils::output_size;
 
+static KEEP_AT_LEAST: usize = 10;
+
 #[derive(Debug)]
 pub struct Monitor<W: LayoutElement> {
     /// Output for this monitor.
@@ -174,16 +176,19 @@ impl<W: LayoutElement> Monitor<W> {
 
     pub fn clean_up_workspaces(&mut self) {
         assert!(self.workspace_switch.is_none());
-        let minimum_workspaces = 10;
+
         for idx in (0..self.workspaces.len() - 1).rev() {
-            if idx < minimum_workspaces {
+            let has_windows = self.workspaces[idx].has_windows();
+            // Preserve blanks up to the last workspace with windows
+            if idx <= KEEP_AT_LEAST && has_windows {
+                debug!("break leanup {idx}");
                 break;
             }
             if self.active_workspace_idx == idx {
                 continue;
             }
 
-            if !self.workspaces[idx].has_windows() {
+            if !has_windows {
                 self.workspaces.remove(idx);
                 if self.active_workspace_idx > idx {
                     self.active_workspace_idx -= 1;
@@ -447,7 +452,20 @@ impl<W: LayoutElement> Monitor<W> {
     }
 
     pub fn switch_workspace(&mut self, idx: usize) {
-        self.activate_workspace(min(idx, self.workspaces.len() - 1));
+        let output = self.output.clone();
+
+        // Not entirely sure we want this for new monitors though?
+        // In general stable workspaces gets more complicated with more monitors :thinking:
+        let missing_this_many = min(idx, KEEP_AT_LEAST).saturating_sub(self.workspaces.len());
+        for _i in 0..missing_this_many {
+            debug!("create workspace");
+            self.workspaces
+                .push(Workspace::new(output.clone(), self.options.clone()));
+        }
+        let i = min(idx, self.workspaces.len() - 1);
+        debug!("switch to {i}");
+        self.activate_workspace(i);
+
         // Don't animate this action.
         self.workspace_switch = None;
 
