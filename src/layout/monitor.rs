@@ -177,14 +177,15 @@ impl<W: LayoutElement> Monitor<W> {
     pub fn clean_up_workspaces(&mut self) {
         assert!(self.workspace_switch.is_none());
 
-        for idx in (0..self.workspaces.len() - 1).rev() {
+        for idx in (0..self.workspaces.len()).rev() {
             let has_windows = self.workspaces[idx].has_windows();
+            let is_active = self.active_workspace_idx == idx;
             // Preserve blanks up to the last workspace with windows
-            if idx <= KEEP_AT_LEAST && has_windows {
+            if idx <= KEEP_AT_LEAST && (has_windows || is_active) {
                 debug!("break leanup {idx}");
                 break;
             }
-            if self.active_workspace_idx == idx {
+            if is_active {
                 continue;
             }
 
