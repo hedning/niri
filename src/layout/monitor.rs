@@ -656,8 +656,8 @@ impl<W: LayoutElement> Monitor<W> {
 
                 let offset = ((render_idx - before_idx as f64) * size.h as f64).round() as i32;
 
-                let before = self.workspaces[before_idx].render_elements(renderer);
-                let after = self.workspaces[after_idx].render_elements(renderer);
+                let before = self.workspaces[before_idx].render_elements(renderer, before_idx);
+                let after = self.workspaces[after_idx].render_elements(renderer, after_idx);
 
                 // HACK: crop to infinite bounds for all sides except the side where the workspaces
                 // join, otherwise it will cut pixel shaders and mess up the coordinate space.
@@ -692,7 +692,8 @@ impl<W: LayoutElement> Monitor<W> {
                 before.chain(after).collect()
             }
             None => {
-                let elements = self.workspaces[self.active_workspace_idx].render_elements(renderer);
+                let elements = self.workspaces[self.active_workspace_idx]
+                    .render_elements(renderer, self.active_workspace_idx);
                 elements
                     .into_iter()
                     .filter_map(|elem| {

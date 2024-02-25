@@ -3,8 +3,10 @@ use std::iter::{self, zip};
 use std::rc::Rc;
 use std::time::Duration;
 
-use niri_config::{CenterFocusedColumn, PresetWidth, Struts};
+use niri_config::{CenterFocusedColumn, Color, PresetWidth, Struts};
 use niri_ipc::SizeChange;
+use smithay::backend::renderer::element::solid::{SolidColorBuffer, SolidColorRenderElement};
+use smithay::backend::renderer::element::Kind;
 use smithay::desktop::space::SpaceElement;
 use smithay::desktop::{layer_map_for_output, Window};
 use smithay::output::Output;
@@ -19,6 +21,33 @@ use crate::niri_render_elements;
 use crate::render_helpers::renderer::NiriRenderer;
 use crate::swipe_tracker::SwipeTracker;
 use crate::utils::output_size;
+
+// Jeez, this is stupid...
+static COLORS: [Color; 13] = [
+    // Color::new(61, 56, 70, 254),
+    // Color::new(136, 138, 133, 254),
+    // Color::new(100, 100, 100, 254),
+    // Color::new(100, 100, 100, 254),
+    // Color::new(117, 80, 123, 254),
+    // Color::new(100, 100, 100, 254),
+    // Color::new(100, 100, 100, 254),
+    // Color::new(100, 100, 100, 254),
+    Color::new(49, 78, 108, 254),
+    Color::new(80, 10, 0, 254),
+    Color::new(86, 82, 72, 254),
+    Color::new(68, 86, 50, 254),
+    Color::new(102, 56, 34, 254),
+    //
+    Color::new(73, 64, 102, 254),
+    Color::new(107, 94, 25, 254),
+    Color::new(130, 102, 71, 254),
+    Color::new(75, 105, 131, 254),
+    Color::new(128, 125, 116, 254),
+    //
+    Color::new(93, 117, 85, 254),
+    Color::new(136, 70, 49, 254),
+    Color::new(98, 91, 129, 254),
+];
 
 #[derive(Debug)]
 pub struct Workspace<W: LayoutElement> {
@@ -1196,10 +1225,9 @@ impl<W: LayoutElement> Workspace<W> {
     pub fn render_elements<R: NiriRenderer>(
         &self,
         renderer: &mut R,
+        idx: usize,
     ) -> Vec<WorkspaceRenderElement<R>> {
-        if self.columns.is_empty() {
-            return vec![];
-        }
+        let mut rv = vec![];
 
         // FIXME: workspaces should probably cache their last used scale so they can be correctly
         // rendered even with no outputs connected.
@@ -1209,7 +1237,23 @@ impl<W: LayoutElement> Workspace<W> {
             .map(|o| Scale::from(o.current_scale().fractional_scale()))
             .unwrap_or(Scale::from(1.));
 
-        let mut rv = vec![];
+        // FIXME: cache the buffer, though since this isn't actually a buffer, it's pretty OK
+        let background_buffer =
+            SolidColorBuffer::new(self.view_size, COLORS[idx % COLORS.len()].into());
+        let bg = SolidColorRenderElement::from_buffer(
+            &background_buffer,
+            (0, 0), // We'll have to see if this is correct
+            output_scale,
+            1.,
+            Kind::Unspecified, // We don't really expect this to change at all so?
+        );
+        let tile: TileRenderElement<R> = bg.into();
+
+        if self.columns.is_empty() {
+            rv.push(tile.into());
+            return rv;
+        }
+
         let mut first = true;
 
         for (tile, tile_pos) in self.tiles_in_render_order() {
@@ -1223,6 +1267,7 @@ impl<W: LayoutElement> Workspace<W> {
             );
         }
 
+        rv.push(tile.into());
         rv
     }
 
