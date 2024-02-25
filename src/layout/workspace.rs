@@ -3,9 +3,10 @@ use std::iter::{self, zip};
 use std::rc::Rc;
 use std::time::Duration;
 
-use niri_config::{CenterFocusedColumn, PresetWidth, Struts, Workspace as WorkspaceConfig};
+use niri_config::{CenterFocusedColumn, Color, PresetWidth, Struts, Workspace as WorkspaceConfig};
 use niri_ipc::SizeChange;
 use ordered_float::NotNan;
+use smithay::backend::renderer::element::Kind;
 use smithay::backend::renderer::gles::GlesRenderer;
 use smithay::desktop::{layer_map_for_output, Window};
 use smithay::output::Output;
@@ -20,6 +21,7 @@ use crate::animation::Animation;
 use crate::input::swipe_tracker::SwipeTracker;
 use crate::niri_render_elements;
 use crate::render_helpers::renderer::NiriRenderer;
+use crate::render_helpers::solid_color::{SolidColorBuffer, SolidColorRenderElement};
 use crate::render_helpers::RenderTarget;
 use crate::utils::id::IdCounter;
 use crate::utils::{output_size, send_scale_transform, ResizeEdge};
@@ -2316,6 +2318,22 @@ impl<W: LayoutElement> Workspace<W> {
 
         let mut rv = vec![];
 
+        // Add after everything else
+        let tile = if let Some(color) = self.color {
+            // FIXME: cache the buffer, though since this isn't actually a buffer, it's pretty OK
+            let background_buffer = SolidColorBuffer::new(self.view_size, color.into());
+            let bg = SolidColorRenderElement::from_buffer(
+                &background_buffer,
+                (0., 0.), // We'll have to see if this is correct
+                1.,
+                Kind::Unspecified, // We don't really expect this to change at all so?
+            );
+            let tile: TileRenderElement<R> = TileRenderElement::SolidColor(bg);
+            Some(tile)
+        } else {
+            None
+        };
+
         // Draw the closing windows on top.
         let view_rect = Rectangle::from_loc_and_size((self.view_pos(), 0.), self.view_size);
         for closing in self.closing_windows.iter().rev() {
@@ -2324,6 +2342,9 @@ impl<W: LayoutElement> Workspace<W> {
         }
 
         if self.columns.is_empty() {
+            if let Some(t) = tile {
+                rv.push(t.into())
+            }
             return rv;
         }
 
@@ -2338,7 +2359,9 @@ impl<W: LayoutElement> Workspace<W> {
                     .map(Into::into),
             );
         }
-
+        if let Some(t) = tile {
+            rv.push(t.into())
+        }
         rv
     }
 
