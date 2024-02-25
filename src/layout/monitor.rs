@@ -461,14 +461,12 @@ impl<W: LayoutElement> Monitor<W> {
 
         // Not entirely sure we want this for new monitors though?
         // In general stable workspaces gets more complicated with more monitors :thinking:
-        let missing_this_many = min(idx, KEEP_AT_LEAST).saturating_sub(self.workspaces.len());
+        let missing_this_many = min(idx + 1, KEEP_AT_LEAST).saturating_sub(self.workspaces.len());
         for _i in 0..missing_this_many {
-            debug!("create workspace");
             self.workspaces
                 .push(Workspace::new(output.clone(), self.options.clone()));
         }
         let i = min(idx, self.workspaces.len() - 1);
-        debug!("switch to {i}");
         self.activate_workspace(i);
 
         // Don't animate this action.

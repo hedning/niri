@@ -404,11 +404,11 @@ impl<W: LayoutElement> Layout<W> {
                 }
             }
             MonitorSet::NoOutputs { mut workspaces } => {
-                // We know there are no empty workspaces there, so add one.
-                workspaces.push(Workspace::new(output.clone(), self.options.clone()));
-
                 for workspace in &mut workspaces {
                     workspace.set_output(Some(output.clone()));
+                }
+                if workspaces.is_empty() {
+                    workspaces.push(Workspace::new(output.clone(), self.options.clone()));
                 }
 
                 let monitor = Monitor::new(output, workspaces, self.options.clone());
