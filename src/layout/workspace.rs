@@ -1590,7 +1590,8 @@ impl<W: LayoutElement> Column<W> {
                 }
             })
             .collect::<Vec<_>>();
-        let mut height_left: i32 = self.working_area.size.h + self.options.border.width as i32;
+        let mut height_left: i32 =
+            self.working_area.size.h + self.options.gaps + self.options.border.width as i32;
         let mut auto_tiles_left = self.tiles.len();
 
         // Subtract all fixed-height tiles.
@@ -1905,7 +1906,7 @@ impl<W: LayoutElement> Column<W> {
         let mut y = 0;
 
         if !self.is_fullscreen {
-            y = self.working_area.loc.y + self.options.gaps;
+            y = self.working_area.loc.y;
         }
 
         self.tiles.iter().map(move |tile| {
