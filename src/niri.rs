@@ -2349,8 +2349,11 @@ impl Niri {
 
     /// Schedules an immediate redraw if one is not already scheduled.
     pub fn queue_redraw(&mut self, output: &Output) {
-        let state = self.output_state.get_mut(output).unwrap();
-        state.redraw_state = mem::take(&mut state.redraw_state).queue_redraw();
+        if let Some(state) = self.output_state.get_mut(output) {
+            state.redraw_state = mem::take(&mut state.redraw_state).queue_redraw();
+        } else {
+            debug!("queue_redraw: no state for output {output:?}")
+        }
     }
 
     pub fn redraw_queued_outputs(&mut self, backend: &mut Backend) {
