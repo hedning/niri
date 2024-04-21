@@ -1343,11 +1343,10 @@ impl Niri {
         let idle_inhibit_manager_state = IdleInhibitManagerState::new::<State>(&display_handle);
         let data_device_state = DataDeviceState::new::<State>(&display_handle);
         let primary_selection_state = PrimarySelectionState::new::<State>(&display_handle);
-        let data_control_state = DataControlState::new::<State, _>(
-            &display_handle,
-            Some(&primary_selection_state),
-            |client| !client.get_data::<ClientState>().unwrap().restricted,
-        );
+        let data_control_state =
+            DataControlState::new::<State, _>(&display_handle, None, |client| {
+                !client.get_data::<ClientState>().unwrap().restricted
+            });
         let presentation_state =
             PresentationState::new::<State>(&display_handle, Monotonic::ID as u32);
         let security_context_state =
