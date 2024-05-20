@@ -2867,6 +2867,7 @@ mod tests {
                     layout.ensure_named_workspace(&WorkspaceConfig {
                         name: WorkspaceName(format!("ws{ws_name}")),
                         open_on_output: output_name.map(|name| format!("output{name}")),
+                        color: None,
                     });
                 }
                 Op::UnnameWorkspace { ws_name } => {
