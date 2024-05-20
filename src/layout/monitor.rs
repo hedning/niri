@@ -23,6 +23,7 @@ use crate::input::swipe_tracker::SwipeTracker;
 use crate::niri_render_elements;
 use crate::render_helpers::renderer::NiriRenderer;
 use crate::render_helpers::shadow::ShadowRenderElement;
+use crate::render_helpers::solid_color::SolidColorBuffer;
 use crate::render_helpers::RenderTarget;
 use crate::rubber_band::RubberBand;
 use crate::utils::transaction::Transaction;
@@ -1473,6 +1474,7 @@ impl<W: LayoutElement> Monitor<W> {
     ) -> impl Iterator<
         Item = (
             Rectangle<f64, Logical>,
+            Option<SolidColorBuffer>,
             impl Iterator<Item = MonitorRenderElement<R>> + 'a,
         ),
     > {
@@ -1527,7 +1529,8 @@ impl<W: LayoutElement> Monitor<W> {
                 Some(elem)
             };
 
-            let (floating, scrolling) = ws.render_elements(renderer, target, focus_ring);
+            let (background, floating, scrolling) =
+                ws.render_elements(renderer, target, focus_ring);
             let floating = floating.filter_map(map_ws_contents);
             let scrolling = scrolling.filter_map(map_ws_contents);
 
@@ -1558,7 +1561,7 @@ impl<W: LayoutElement> Monitor<W> {
                 )
             });
 
-            (geo, iter)
+            (geo, background, iter)
         })
     }
 

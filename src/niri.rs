@@ -4219,7 +4219,7 @@ impl Niri {
         let zoom = mon.overview_zoom();
         let monitor_elements = Vec::from_iter(
             mon.render_elements(renderer, target, focus_ring)
-                .map(|(geo, iter)| (geo, Vec::from_iter(iter))),
+                .map(|(geo, background, iter)| (geo, background, Vec::from_iter(iter))),
         );
         let workspace_shadow_elements = Vec::from_iter(mon.render_workspace_shadows(renderer));
         let insert_hint_elements = mon.render_insert_hint_between_workspaces(renderer);
@@ -4266,7 +4266,7 @@ impl Niri {
             elements.extend(
                 monitor_elements
                     .into_iter()
-                    .flat_map(|(_ws_geo, iter)| iter)
+                    .flat_map(|(_ws_geo, _background, iter)| iter)
                     .map(OutputRenderElements::from),
             );
 
@@ -4295,7 +4295,7 @@ impl Niri {
                     .map(OutputRenderElements::from),
             );
 
-            for (ws_geo, ws_elements) in monitor_elements {
+            for (ws_geo, ws_background, ws_elements) in monitor_elements {
                 // Collect all other layer-shell elements.
                 let mut layer_elems = SplitElements::default();
                 extend_from_layer(&mut layer_elems, Layer::Bottom, false);
@@ -4319,7 +4319,20 @@ impl Niri {
                         .map(OutputRenderElements::from),
                 );
 
-                if let Some(elem) =
+                if let Some(elem) = ws_background
+                    .map(|background| {
+                        let bg = SolidColorRenderElement::from_buffer(
+                            &background,
+                            (0., 0.), // We'll have to see if this is correct
+                            1.,
+                            Kind::Unspecified, // We don't really expect this to change at all so?
+                        );
+                        scale_relocate_crop(bg, output_scale, zoom, ws_geo)
+                    })
+                    .flatten()
+                {
+                    elements.push(OutputRenderElements::from(elem));
+                } else if let Some(elem) =
                     scale_relocate_crop(background.clone(), output_scale, zoom, ws_geo)
                 {
                     elements.push(OutputRenderElements::from(elem));

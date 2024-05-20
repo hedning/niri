@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use niri_config::{
-    CenterFocusedColumn, CornerRadius, OutputName, PresetSize, Workspace as WorkspaceConfig,
+    CenterFocusedColumn, Color, CornerRadius, OutputName, PresetSize, Workspace as WorkspaceConfig,
 };
 use niri_ipc::{ColumnDisplay, PositionChange, SizeChange};
 use smithay::backend::renderer::gles::GlesRenderer;
@@ -29,6 +29,7 @@ use crate::animation::Clock;
 use crate::niri_render_elements;
 use crate::render_helpers::renderer::NiriRenderer;
 use crate::render_helpers::shadow::ShadowRenderElement;
+use crate::render_helpers::solid_color::SolidColorBuffer;
 use crate::render_helpers::RenderTarget;
 use crate::utils::id::IdCounter;
 use crate::utils::transaction::{Transaction, TransactionBlocker};
@@ -98,6 +99,9 @@ pub struct Workspace<W: LayoutElement> {
 
     /// Optional name of this workspace.
     pub(super) name: Option<String>,
+
+    /// Optional solid color background
+    pub color: Option<Color>,
 
     /// Unique ID of this workspace.
     id: WorkspaceId,
@@ -237,7 +241,7 @@ impl<W: LayoutElement> Workspace<W> {
 
         let shadow_config =
             compute_workspace_shadow_config(options.overview.workspace_shadow, view_size);
-
+        // config.as_ref().map(|c| c.color).flatten();
         Self {
             scrolling,
             floating,
@@ -252,6 +256,7 @@ impl<W: LayoutElement> Workspace<W> {
             clock,
             base_options,
             options,
+            color: config.as_ref().map(|c| c.color).flatten(),
             name: config.map(|c| c.name.0),
             id: WorkspaceId::next(),
         }
@@ -309,6 +314,7 @@ impl<W: LayoutElement> Workspace<W> {
             clock,
             base_options,
             options,
+            color: config.as_ref().map(|c| c.color).flatten(),
             name: config.map(|c| c.name.0),
             id: WorkspaceId::next(),
         }
@@ -1449,6 +1455,7 @@ impl<W: LayoutElement> Workspace<W> {
         target: RenderTarget,
         focus_ring: bool,
     ) -> (
+        Option<SolidColorBuffer>,
         impl Iterator<Item = WorkspaceRenderElement<R>>,
         impl Iterator<Item = WorkspaceRenderElement<R>>,
     ) {
@@ -1456,6 +1463,7 @@ impl<W: LayoutElement> Workspace<W> {
         let scrolling = self
             .scrolling
             .render_elements(renderer, target, scrolling_focus_ring);
+
         let scrolling = scrolling.into_iter().map(WorkspaceRenderElement::from);
 
         let floating_focus_ring = focus_ring && self.floating_is_active();
@@ -1468,7 +1476,12 @@ impl<W: LayoutElement> Workspace<W> {
         });
         let floating = floating.into_iter().flatten();
 
-        (floating, scrolling)
+        (
+            self.color
+                .map(|c| SolidColorBuffer::new(self.view_size, [c.r, c.g, c.b, c.a])),
+            floating,
+            scrolling,
+        )
     }
 
     pub fn render_shadow<R: NiriRenderer>(

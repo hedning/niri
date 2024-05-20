@@ -39,7 +39,7 @@ use std::time::Duration;
 
 use monitor::{InsertHint, InsertPosition, InsertWorkspace, MonitorAddWindowTarget};
 use niri_config::{
-    CenterFocusedColumn, Config, CornerRadius, FloatOrInt, PresetSize, Struts,
+    CenterFocusedColumn, Color, Config, CornerRadius, FloatOrInt, PresetSize, Struts,
     Workspace as WorkspaceConfig, WorkspaceReference,
 };
 use niri_ipc::{ColumnDisplay, PositionChange, SizeChange};
@@ -1433,6 +1433,32 @@ impl<W: LayoutElement> Layout<W> {
                     }
                 }
             }
+        }
+    }
+    pub fn color_workspace(&mut self, workspace_name: &str, color: Option<Color>) {
+        self.modify_workspace(workspace_name, |ws| ws.color = color);
+    }
+
+    pub fn modify_workspace(&mut self, workspace_name: &str, func: impl Fn(&mut Workspace<W>)) {
+        let find_workspace = |workspaces: &mut Vec<Workspace<W>>| {
+            for ws in workspaces {
+                if ws
+                    .name
+                    .as_ref()
+                    .map_or(false, |name| name.eq_ignore_ascii_case(workspace_name))
+                {
+                    func(ws);
+                }
+            }
+        };
+
+        match &mut self.monitor_set {
+            MonitorSet::Normal { monitors, .. } => {
+                for mon in monitors {
+                    find_workspace(&mut mon.workspaces);
+                }
+            }
+            MonitorSet::NoOutputs { workspaces } => find_workspace(workspaces),
         }
     }
 
@@ -3091,6 +3117,7 @@ impl<W: LayoutElement> Layout<W> {
 
     pub fn ensure_named_workspace(&mut self, ws_config: &WorkspaceConfig) {
         if self.find_workspace_by_name(&ws_config.name.0).is_some() {
+            self.color_workspace(&ws_config.name.0, ws_config.color);
             return;
         }
 
