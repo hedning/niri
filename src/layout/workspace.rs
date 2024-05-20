@@ -3,9 +3,10 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use niri_config::{
-    CenterFocusedColumn, CornerRadius, OutputName, PresetSize, Workspace as WorkspaceConfig,
+    CenterFocusedColumn, Color, CornerRadius, OutputName, PresetSize, Workspace as WorkspaceConfig,
 };
 use niri_ipc::{ColumnDisplay, PositionChange, SizeChange};
+use smithay::backend::renderer::element::Kind;
 use smithay::backend::renderer::gles::GlesRenderer;
 use smithay::desktop::{layer_map_for_output, Window};
 use smithay::output::Output;
@@ -20,7 +21,7 @@ use super::scrolling::{
     Column, ColumnWidth, ScrollDirection, ScrollingSpace, ScrollingSpaceRenderElement,
 };
 use super::shadow::Shadow;
-use super::tile::{Tile, TileRenderSnapshot};
+use super::tile::{Tile, TileRenderElement, TileRenderSnapshot};
 use super::{
     ActivateWindow, HitType, InsertPosition, InteractiveResizeData, LayoutElement, Options,
     RemovedTile, SizeFrac,
@@ -29,6 +30,7 @@ use crate::animation::Clock;
 use crate::niri_render_elements;
 use crate::render_helpers::renderer::NiriRenderer;
 use crate::render_helpers::shadow::ShadowRenderElement;
+use crate::render_helpers::solid_color::{SolidColorBuffer, SolidColorRenderElement};
 use crate::render_helpers::RenderTarget;
 use crate::utils::id::IdCounter;
 use crate::utils::transaction::{Transaction, TransactionBlocker};
@@ -98,6 +100,10 @@ pub struct Workspace<W: LayoutElement> {
 
     /// Optional name of this workspace.
     pub(super) name: Option<String>,
+
+    /// Optional solid color background
+    /// Curroently only set on workspace creation
+    pub color: Option<Color>,
 
     /// Unique ID of this workspace.
     id: WorkspaceId,
@@ -252,6 +258,7 @@ impl<W: LayoutElement> Workspace<W> {
             clock,
             base_options,
             options,
+            color: config.as_ref().map(|c| c.color).flatten(),
             name: config.map(|c| c.name.0),
             id: WorkspaceId::next(),
         }
@@ -309,6 +316,7 @@ impl<W: LayoutElement> Workspace<W> {
             clock,
             base_options,
             options,
+            color: config.as_ref().map(|c| c.color).flatten(),
             name: config.map(|c| c.name.0),
             id: WorkspaceId::next(),
         }
@@ -1453,9 +1461,23 @@ impl<W: LayoutElement> Workspace<W> {
         impl Iterator<Item = WorkspaceRenderElement<R>>,
     ) {
         let scrolling_focus_ring = focus_ring && !self.floating_is_active();
-        let scrolling = self
+        let mut scrolling = self
             .scrolling
             .render_elements(renderer, target, scrolling_focus_ring);
+        if let Some(color) = self.color {
+            // FIXME: cache the buffer, though since this isn't actually a buffer, it's pretty OK
+            let background_buffer =
+                SolidColorBuffer::new(self.view_size, [color.r, color.g, color.b, color.a]);
+            let bg = SolidColorRenderElement::from_buffer(
+                &background_buffer,
+                (0., 0.), // We'll have to see if this is correct
+                1.,
+                Kind::Unspecified, // We don't really expect this to change at all so?
+            );
+            let tile = ScrollingSpaceRenderElement::Tile(TileRenderElement::SolidColor(bg));
+            // We want this to the very last, so it's rendered on the bottom
+            scrolling.push(tile);
+        }
         let scrolling = scrolling.into_iter().map(WorkspaceRenderElement::from);
 
         let floating_focus_ring = focus_ring && self.floating_is_active();
