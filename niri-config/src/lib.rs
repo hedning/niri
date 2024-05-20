@@ -954,12 +954,14 @@ pub struct EnvironmentVariable {
     pub value: Option<String>,
 }
 
-#[derive(knuffel::Decode, Debug, Clone, PartialEq, Eq)]
+#[derive(knuffel::Decode, Debug, Clone, PartialEq)]
 pub struct Workspace {
     #[knuffel(argument)]
     pub name: WorkspaceName,
     #[knuffel(child, unwrap(argument))]
     pub open_on_output: Option<String>,
+    #[knuffel(child)]
+    pub color: Option<Color>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3424,14 +3426,17 @@ mod tests {
                     Workspace {
                         name: WorkspaceName("workspace-1".to_string()),
                         open_on_output: Some("eDP-1".to_string()),
+                        color: None,
                     },
                     Workspace {
                         name: WorkspaceName("workspace-2".to_string()),
                         open_on_output: None,
+                        color: None,
                     },
                     Workspace {
                         name: WorkspaceName("workspace-3".to_string()),
                         open_on_output: None,
+                        color: None,
                     },
                 ],
                 binds: Binds(vec![
