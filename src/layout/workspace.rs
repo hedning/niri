@@ -114,6 +114,10 @@ pub struct Workspace<W: LayoutElement> {
     /// Optional name of this workspace.
     pub name: Option<String>,
 
+    /// Optional solid color background
+    /// Curroently only set on workspace creation
+    pub color: Option<Color>,
+
     /// Unique ID of this workspace.
     id: WorkspaceId,
 }
@@ -374,6 +378,7 @@ impl<W: LayoutElement> Workspace<W> {
             closing_windows: vec![],
             base_options,
             options,
+            color: config.as_ref().map(|c| c.color).flatten(),
             name: config.map(|c| c.name.0),
             id: WorkspaceId::next(),
         }
@@ -412,6 +417,7 @@ impl<W: LayoutElement> Workspace<W> {
             closing_windows: vec![],
             base_options,
             options,
+            color: config.as_ref().map(|c| c.color).flatten(),
             name: config.map(|c| c.name.0),
             id: WorkspaceId::next(),
         }

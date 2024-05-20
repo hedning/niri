@@ -755,6 +755,8 @@ pub struct Workspace {
     pub name: WorkspaceName,
     #[knuffel(child, unwrap(argument))]
     pub open_on_output: Option<String>,
+    #[knuffel(child)]
+    pub color: Option<Color>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
