@@ -871,24 +871,31 @@ impl<W: LayoutElement> Layout<W> {
         }
     }
     pub fn color_workspace(&mut self, workspace_name: &str, color: Option<Color>) {
-        let set_color = |workspaces: &mut Vec<Workspace<W>>| {
+        self.modify_workspace(workspace_name, |ws| {
+            ws.color = color;
+        });
+    }
+
+    pub fn modify_workspace(&mut self, workspace_name: &str, func: impl Fn(&mut Workspace<W>)) {
+        let find_workspace = |workspaces: &mut Vec<Workspace<W>>| {
             for ws in workspaces {
                 if ws
                     .name
                     .as_ref()
                     .map_or(false, |name| name.eq_ignore_ascii_case(workspace_name))
                 {
-                    ws.color = color;
+                    func(ws);
                 }
             }
         };
+
         match &mut self.monitor_set {
             MonitorSet::Normal { monitors, .. } => {
                 for mon in monitors {
-                    set_color(&mut mon.workspaces);
+                    find_workspace(&mut mon.workspaces);
                 }
             }
-            MonitorSet::NoOutputs { workspaces } => set_color(workspaces),
+            MonitorSet::NoOutputs { workspaces } => find_workspace(workspaces),
         }
     }
 
