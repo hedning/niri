@@ -313,6 +313,24 @@ impl State {
                     }
                 }
 
+                // Need to remove repeat timers when modifiers are released too, we might end up never finding a matching release bind
+                if !pressed {
+                    if let Some((key, token)) = &this.niri.bind_repeat {
+                        let mut modifiers = modifiers_from_state(*mods);
+                        if match comp_mod {
+                            CompositorMod::Super => mods.logo,
+                            CompositorMod::Alt => mods.alt,
+                        } {
+                            modifiers |= Modifiers::COMPOSITOR;
+                        }
+
+                        if (key.modifiers & modifiers) != key.modifiers {
+                            this.niri.event_loop.remove(*token);
+                            this.niri.bind_repeat = None;
+                        }
+                    }
+                }
+
                 should_intercept_key(
                     &mut this.niri.suppressed_keys,
                     bindings,
@@ -332,7 +350,39 @@ impl State {
 
         // Filter actions when the key is released or the session is locked.
         if !pressed {
+            if let Some((key, token)) = self.niri.bind_repeat {
+                if key.eq(&bind.key) {
+                    self.niri.event_loop.remove(token);
+                    self.niri.bind_repeat = None;
+                }
+            };
+
+            // Remove repeat if we released a bind, this only happens if the trigger is released before the modifiers. We handle the modifiers in the input callback
             return;
+        }
+
+        if let Some((_, token)) = self.niri.bind_repeat {
+            self.niri.event_loop.remove(token);
+            self.niri.bind_repeat = None;
+        };
+
+        {
+            // Setup repeat timer
+            let (delay, rate) = {
+                let keyboard = &self.niri.config.borrow().input.keyboard;
+                (keyboard.repeat_delay, 1 / keyboard.repeat_rate as u64)
+            };
+            let timer = Timer::from_duration(Duration::from_millis(delay.into()));
+            let repeat_bind = bind.clone();
+            let token = self
+                .niri
+                .event_loop
+                .insert_source(timer, move |_, _, state| {
+                    state.handle_bind(repeat_bind.clone());
+                    return TimeoutAction::ToDuration(Duration::from_secs(rate));
+                })
+                .unwrap();
+            self.niri.bind_repeat = Some((bind.key, token));
         }
 
         self.handle_bind(bind);
@@ -2110,9 +2160,9 @@ fn should_intercept_key(
             suppressed_keys.insert(key_code);
             FilterResult::Intercept(Some(bind))
         }
-        (_, false) => {
+        (maybe_bind, false) => {
             suppressed_keys.remove(&key_code);
-            FilterResult::Intercept(None)
+            FilterResult::Intercept(maybe_bind)
         }
         (None, true) => FilterResult::Forward,
     }
