@@ -4522,7 +4522,13 @@ mod tests {
         assert!(suppressed_keys.contains(&close_key_code));
 
         let filter = close_key_event(&mut suppressed_keys, mods, false);
-        assert!(matches!(filter, FilterResult::Intercept(None)));
+        assert!(matches!(
+            filter,
+            FilterResult::Intercept(Some(Bind {
+                action: Action::CloseWindow,
+                ..
+            }))
+        ));
         assert!(suppressed_keys.is_empty());
 
         // Remove mod to make it for a binding.
@@ -4558,7 +4564,13 @@ mod tests {
         assert!(matches!(filter, FilterResult::Forward));
 
         let filter = close_key_event(&mut suppressed_keys, mods, false);
-        assert!(matches!(filter, FilterResult::Intercept(None)));
+        assert!(matches!(
+            filter,
+            FilterResult::Intercept(Some(Bind {
+                action: Action::CloseWindow,
+                ..
+            }))
+        ));
 
         let filter = none_key_event(&mut suppressed_keys, mods, false);
         assert!(matches!(filter, FilterResult::Forward));
