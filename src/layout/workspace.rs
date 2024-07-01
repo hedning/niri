@@ -3026,7 +3026,12 @@ impl<W: LayoutElement> Workspace<W> {
 
         self.active_column_idx = new_col_idx;
 
-        let target_view_offset = target_snap.view_pos - new_col_x;
+        let target_view_offset =
+            if self.options.center_focused_column != CenterFocusedColumn::Always {
+                target_snap.view_pos - new_col_x
+            } else {
+                target_view_pos - new_col_x
+            };
 
         self.view_offset = ViewOffset::Animation(Animation::new(
             self.clock.clone(),
