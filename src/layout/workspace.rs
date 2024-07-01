@@ -2483,35 +2483,30 @@ impl<W: LayoutElement> Workspace<W> {
             }
         } else {
             let view_width = self.view_size.w;
-            let mut push = |col_idx, left, right| {
-                snapping_points.push(Snap {
-                    view_pos: left,
-                    col_idx,
-                });
-                snapping_points.push(Snap {
-                    view_pos: right - view_width,
-                    col_idx,
-                });
-            };
-
             let mut col_x = 0.;
             for (col_idx, col) in self.columns.iter().enumerate() {
                 let col_w = col.width();
 
-                // Normal columns align with the working area, but fullscreen columns align with the
-                // view size.
-                if col.is_fullscreen {
-                    let left = col_x;
-                    let right = col_x + col_w;
-                    push(col_idx, left, right);
-                } else {
-                    // Logic from compute_new_view_offset.
-                    let padding =
-                        ((self.working_area.size.w - col_w) / 2.).clamp(0., self.options.gaps);
-                    let left = col_x - padding - left_strut;
-                    let right = col_x + col_w + padding + right_strut;
-                    push(col_idx, left, right);
-                }
+                snapping_points.push(Snap {
+                    view_pos: col_x,
+                    col_idx,
+                });
+
+                // // Normal columns align with the working area, but fullscreen columns align with the
+                // // view size.
+                // if col.is_fullscreen {
+                //     let left = col_x;
+                //     let right = col_x + col_w;
+                //     push(col_idx, left, right);
+                // } else {
+                //     // Logic from compute_new_view_offset.
+                //     let padding =
+                //         ((self.working_area.size.w - col_w) / 2.).clamp(0., self.options.gaps);
+                //     let left = col_x - padding - left_strut;
+                //     let right = col_x + col_w + padding + right_strut;
+                //     push(col_idx, left, right);
+                //     push()
+                // }
 
                 col_x += col_w + self.options.gaps;
             }
@@ -2553,7 +2548,7 @@ impl<W: LayoutElement> Workspace<W> {
 
                     new_col_idx = col_idx;
                 }
-            } else {
+            } else if gesture.is_touchpad {
                 for col_idx in (0..new_col_idx).rev() {
                     let col = &self.columns[col_idx];
                     let col_x = self.column_x(col_idx);
@@ -2574,14 +2569,11 @@ impl<W: LayoutElement> Workspace<W> {
                     new_col_idx = col_idx;
                 }
             }
-        }
-
-        let new_col_x = if gesture.is_touchpad {
-            self.column_x(new_col_idx)
         } else {
             new_col_idx = self.active_column_idx;
-            active_col_x
-        };
+        }
+
+        let new_col_x = self.column_x(new_col_idx);
         let delta = active_col_x - new_col_x;
         self.view_offset = current_view_offset + delta;
 
@@ -2592,7 +2584,7 @@ impl<W: LayoutElement> Workspace<W> {
         self.active_column_idx = new_col_idx;
 
         let target_view_offset =
-            if self.options.center_focused_column != CenterFocusedColumn::Always {
+            if self.options.center_focused_column == CenterFocusedColumn::Always {
                 target_snap.view_pos - new_col_x
             } else {
                 target_view_pos - new_col_x
