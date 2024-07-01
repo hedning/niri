@@ -1945,7 +1945,7 @@ impl State {
                 self.niri.queue_redraw_all();
             }
 
-            if button == Some(MouseButton::Middle) && !pointer.is_grabbed() {
+            if button == Some(MouseButton::Left) && !pointer.is_grabbed() {
                 let mod_down = match self.backend.mod_key() {
                     CompositorMod::Super => mods.logo,
                     CompositorMod::Alt => mods.alt,
