@@ -3017,7 +3017,12 @@ impl<W: LayoutElement> Workspace<W> {
             }
         }
 
-        let new_col_x = self.column_x(new_col_idx);
+        let new_col_x = if gesture.is_touchpad {
+            self.column_x(new_col_idx)
+        } else {
+            new_col_idx = self.active_column_idx;
+            active_col_x
+        };
         let delta = active_col_x - new_col_x;
 
         if self.active_column_idx != new_col_idx {
