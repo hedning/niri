@@ -96,7 +96,7 @@ impl SeatHandler for State {
         let dh = &self.niri.display_handle;
         let client = focused.and_then(|s| dh.get_client(s.id()).ok());
         set_data_device_focus(dh, seat, client.clone());
-        set_primary_focus(dh, seat, client);
+        // set_primary_focus(dh, seat, client);
     }
 
     fn led_state_changed(&mut self, _seat: &Seat<Self>, led_state: keyboard::LedState) {
