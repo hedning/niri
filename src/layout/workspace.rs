@@ -2449,7 +2449,11 @@ impl<W: LayoutElement> Workspace<W> {
 
         // Figure out where the gesture would stop after deceleration.
         let end_pos = gesture.tracker.projected_end_pos() * norm_factor;
-        let target_view_offset = end_pos + gesture.delta_from_tracker;
+        let target_view_offset = if gesture.is_touchpad {
+            end_pos + gesture.delta_from_tracker
+        } else {
+            current_view_offset
+        };
 
         // Compute the snapping points. These are where the view aligns with column boundaries on
         // either side.
@@ -2524,7 +2528,8 @@ impl<W: LayoutElement> Workspace<W> {
 
         let mut new_col_idx = target_snap.col_idx;
 
-        if self.options.center_focused_column != CenterFocusedColumn::Always {
+        if self.options.center_focused_column != CenterFocusedColumn::Always && gesture.is_touchpad
+        {
             // Focus the furthest window towards the direction of the gesture.
             if target_view_offset >= current_view_offset {
                 for col_idx in (new_col_idx + 1)..self.columns.len() {
