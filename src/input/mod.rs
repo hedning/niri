@@ -1348,7 +1348,7 @@ impl State {
                 self.niri.queue_redraw_all();
             }
 
-            if event.button() == Some(MouseButton::Middle) && !pointer.is_grabbed() {
+            if event.button() == Some(MouseButton::Left) && !pointer.is_grabbed() {
                 let mods = self.niri.seat.get_keyboard().unwrap().modifier_state();
                 let mod_down = match self.backend.mod_key() {
                     CompositorMod::Super => mods.logo,
