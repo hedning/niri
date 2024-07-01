@@ -2824,10 +2824,9 @@ impl<W: LayoutElement> Workspace<W> {
     }
 
     pub fn view_offset_gesture_end(&mut self, _cancelled: bool, is_touchpad: Option<bool>) -> bool {
-        let ViewOffset::Gesture(gesture) = &mut self.view_offset else {
+        let ViewOffset::Gesture(gesture) = &self.view_offset else {
             return false;
         };
-
         if is_touchpad.map_or(false, |x| gesture.is_touchpad != x) {
             return false;
         }
@@ -2853,7 +2852,11 @@ impl<W: LayoutElement> Workspace<W> {
 
         // Figure out where the gesture would stop after deceleration.
         let end_pos = gesture.tracker.projected_end_pos() * norm_factor;
-        let target_view_offset = end_pos + gesture.delta_from_tracker;
+        let target_view_offset = if gesture.is_touchpad {
+            end_pos + gesture.delta_from_tracker
+        } else {
+            current_view_offset
+        };
 
         // Compute the snapping points. These are where the view aligns with column boundaries on
         // either side.
@@ -2867,7 +2870,6 @@ impl<W: LayoutElement> Workspace<W> {
         let mut snapping_points = Vec::new();
 
         let left_strut = self.working_area.loc.x;
-        let right_strut = self.view_size.w - self.working_area.size.w - self.working_area.loc.x;
 
         if self.is_centering_focused_column() {
             let mut col_x = 0.;
@@ -2886,73 +2888,78 @@ impl<W: LayoutElement> Workspace<W> {
                 col_x += col_w + self.options.gaps;
             }
         } else {
-            let view_width = self.view_size.w;
-            let working_area_width = self.working_area.size.w;
+            // let view_width = self.view_size.w;
+            // let working_area_width = self.working_area.size.w;
             let gaps = self.options.gaps;
 
-            let snap_points = |col_x, col: &Column<W>| {
-                let col_w = col.width();
+            // let snap_points = |col_x, col: &Column<W>| {
+            //     let col_w = col.width();
 
-                // Normal columns align with the working area, but fullscreen columns align with the
-                // view size.
-                if col.is_fullscreen {
-                    let left = col_x;
-                    let right = col_x + col_w;
-                    (left, right)
-                } else {
-                    // Logic from compute_new_view_offset.
-                    let padding = ((working_area_width - col_w) / 2.).clamp(0., gaps);
-                    let left = col_x - padding - left_strut;
-                    let right = col_x + col_w + padding + right_strut;
-                    (left, right)
-                }
-            };
+            //     // Normal columns align with the working area, but fullscreen columns align with the
+            //     // view size.
+            //     if col.is_fullscreen {
+            //         let left = col_x;
+            //         let right = col_x + col_w;
+            //         (left, right)
+            //     } else {
+            //         // Logic from compute_new_view_offset.
+            //         let padding = ((working_area_width - col_w) / 2.).clamp(0., gaps);
+            //         let left = col_x - padding - left_strut;
+            //         let right = col_x + col_w + padding + right_strut;
+            //         (left, right)
+            //     }
+            // };
 
-            // Prevent the gesture from snapping further than the first/last column, as this is
-            // generally undesired.
-            //
-            // It's ok if leftmost_snap is > rightmost_snap (this happens if the columns on a
-            // workspace total up to less than the workspace width).
-            let leftmost_snap = snap_points(0., &self.columns[0]).0;
-            let last_col_idx = self.columns.len() - 1;
-            let last_col_x = self
-                .columns
-                .iter()
-                .take(last_col_idx)
-                .fold(0., |col_x, col| col_x + col.width() + gaps);
-            let rightmost_snap =
-                snap_points(last_col_x, &self.columns[last_col_idx]).1 - view_width;
+            // // Prevent the gesture from snapping further than the first/last column, as this is
+            // // generally undesired.
+            // //
+            // // It's ok if leftmost_snap is > rightmost_snap (this happens if the columns on a
+            // // workspace total up to less than the workspace width).
+            // let leftmost_snap = snap_points(0., &self.columns[0]).0;
+            // let last_col_idx = self.columns.len() - 1;
+            // let last_col_x = self
+            //     .columns
+            //     .iter()
+            //     .take(last_col_idx)
+            //     .fold(0., |col_x, col| col_x + col.width() + gaps);
+            // let rightmost_snap =
+            //     snap_points(last_col_x, &self.columns[last_col_idx]).1 - view_width;
 
-            snapping_points.push(Snap {
-                view_pos: leftmost_snap,
-                col_idx: 0,
-            });
-            snapping_points.push(Snap {
-                view_pos: rightmost_snap,
-                col_idx: last_col_idx,
-            });
+            // snapping_points.push(Snap {
+            //     view_pos: leftmost_snap,
+            //     col_idx: 0,
+            // });
+            // snapping_points.push(Snap {
+            //     view_pos: rightmost_snap,
+            //     col_idx: last_col_idx,
+            // });
 
-            let mut push = |col_idx, left, right| {
-                if leftmost_snap < left && left < rightmost_snap {
-                    snapping_points.push(Snap {
-                        view_pos: left,
-                        col_idx,
-                    });
-                }
+            // let mut push = |col_idx, left, right| {
+            //     if leftmost_snap < left && left < rightmost_snap {
+            //         snapping_points.push(Snap {
+            //             view_pos: left,
+            //             col_idx,
+            //         });
+            //     }
 
-                let right = right - view_width;
-                if leftmost_snap < right && right < rightmost_snap {
-                    snapping_points.push(Snap {
-                        view_pos: right,
-                        col_idx,
-                    });
-                }
-            };
+            //     let right = right - view_width;
+            //     if leftmost_snap < right && right < rightmost_snap {
+            //         snapping_points.push(Snap {
+            //             view_pos: right,
+            //             col_idx,
+            //         });
+            //     }
+            // };
 
             let mut col_x = 0.;
             for (col_idx, col) in self.columns.iter().enumerate() {
-                let (left, right) = snap_points(col_x, col);
-                push(col_idx, left, right);
+                // let (left, right) = snap_points(col_x, col);
+                // push(col_idx, left, right);
+
+                snapping_points.push(Snap {
+                    view_pos: col_x,
+                    col_idx,
+                });
 
                 col_x += col.width() + gaps;
             }
@@ -2970,7 +2977,8 @@ impl<W: LayoutElement> Workspace<W> {
 
         let mut new_col_idx = target_snap.col_idx;
 
-        if !self.is_centering_focused_column() {
+        if self.options.center_focused_column != CenterFocusedColumn::Always && gesture.is_touchpad
+        {
             // Focus the furthest window towards the direction of the gesture.
             if target_view_offset >= current_view_offset {
                 for col_idx in (new_col_idx + 1)..self.columns.len() {
@@ -2994,7 +3002,7 @@ impl<W: LayoutElement> Workspace<W> {
 
                     new_col_idx = col_idx;
                 }
-            } else {
+            } else if gesture.is_touchpad {
                 for col_idx in (0..new_col_idx).rev() {
                     let col = &self.columns[col_idx];
                     let col_x = self.column_x(col_idx);
@@ -3015,14 +3023,11 @@ impl<W: LayoutElement> Workspace<W> {
                     new_col_idx = col_idx;
                 }
             }
-        }
-
-        let new_col_x = if gesture.is_touchpad {
-            self.column_x(new_col_idx)
         } else {
             new_col_idx = self.active_column_idx;
-            active_col_x
-        };
+        }
+
+        let new_col_x = self.column_x(new_col_idx);
         let delta = active_col_x - new_col_x;
 
         if self.active_column_idx != new_col_idx {
@@ -3032,7 +3037,7 @@ impl<W: LayoutElement> Workspace<W> {
         self.active_column_idx = new_col_idx;
 
         let target_view_offset =
-            if self.options.center_focused_column != CenterFocusedColumn::Always {
+            if self.options.center_focused_column == CenterFocusedColumn::Always {
                 target_snap.view_pos - new_col_x
             } else {
                 target_view_pos - new_col_x
