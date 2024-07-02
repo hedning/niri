@@ -366,7 +366,8 @@ impl State {
             self.niri.bind_repeat = None;
         };
 
-        {
+        // Should probably handle this in a better way
+        if !&self.niri.screenshot_ui.is_open() {
             // Setup repeat timer
             let (delay, rate) = {
                 let keyboard = &self.niri.config.borrow().input.keyboard;
