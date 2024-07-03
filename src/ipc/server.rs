@@ -8,8 +8,7 @@ use calloop::io::Async;
 use directories::BaseDirs;
 use futures_util::io::{AsyncReadExt, BufReader};
 use futures_util::{AsyncBufReadExt, AsyncWriteExt};
-use niri_ipc::{OutputConfigChanged, Reply, Request, Response};
-use smithay::desktop::Window;
+use niri_ipc::{OutputConfigChanged, Reply, Request, Response, Window};
 use smithay::reexports::calloop::generic::Generic;
 use smithay::reexports::calloop::{Interest, LoopHandle, Mode, PostAction};
 use smithay::reexports::rustix::fs::unlink;
@@ -27,7 +26,7 @@ pub struct IpcServer {
 struct ClientCtx {
     event_loop: LoopHandle<'static, State>,
     ipc_outputs: Arc<Mutex<IpcOutputMap>>,
-    ipc_focused_window: Arc<Mutex<Option<Window>>>,
+    ipc_focused_window: Arc<Mutex<Option<smithay::desktop::Window>>>,
 }
 
 impl IpcServer {
@@ -144,6 +143,38 @@ async fn process(ctx: &ClientCtx, request: Request) -> Reply {
         Request::Outputs => {
             let ipc_outputs = ctx.ipc_outputs.lock().unwrap().clone();
             Response::Outputs(ipc_outputs)
+        }
+        Request::Windows => {
+            let (tx, rx) = async_channel::bounded(1);
+            ctx.event_loop.insert_idle(move |state| {
+                let mut windows = vec![];
+                state.niri.layout.with_windows(|mapped, _| {
+                    let wl_surface = mapped
+                        .window
+                        .toplevel()
+                        .expect("no X11 support")
+                        .wl_surface();
+
+                    let id = u64::from(mapped.id().get());
+                    let props = with_states(wl_surface, |states| {
+                        let role = states
+                            .data_map
+                            .get::<XdgToplevelSurfaceData>()
+                            .unwrap()
+                            .lock()
+                            .unwrap();
+
+                        windows.push(Window {
+                            title: Some(role.title.clone().unwrap_or_default()),
+                            app_id: Some(role.app_id.clone().unwrap_or_default()),
+                        });
+                    });
+                });
+                let _ = tx.send_blocking(windows);
+            });
+            let result = rx.recv().await;
+            let windows = result.map_err(|_| String::from("error getting workspace info"))?;
+            Response::Windows(windows)
         }
         Request::FocusedWindow => {
             let window = ctx.ipc_focused_window.lock().unwrap().clone();

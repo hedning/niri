@@ -33,6 +33,8 @@ pub enum Request {
     },
     /// Request information about workspaces.
     Workspaces,
+    /// Request information about workspaces.
+    Windows,
     /// Request information about the focused output.
     FocusedOutput,
     /// Respond with an error (for testing error handling).
@@ -64,6 +66,8 @@ pub enum Response {
     FocusedWindow(Option<Window>),
     /// Output configuration change result.
     OutputConfigChanged(OutputConfigChanged),
+    /// Information about workspaces.
+    Windows(Vec<Window>),
     /// Information about workspaces.
     Workspaces(Vec<Workspace>),
     /// Information about the focused output.
