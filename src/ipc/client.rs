@@ -19,6 +19,7 @@ pub fn handle_msg(msg: Msg, json: bool) -> anyhow::Result<()> {
             action: action.clone(),
         },
         Msg::Workspaces => Request::Workspaces,
+        Msg::Windows => Request::Windows,
         Msg::RequestError => Request::ReturnError,
     };
 
@@ -188,6 +189,17 @@ pub fn handle_msg(msg: Msg, json: bool) -> anyhow::Result<()> {
             if response == OutputConfigChanged::OutputWasMissing {
                 println!("Output \"{output}\" is not connected.");
                 println!("The change will apply when it is connected.");
+            }
+        }
+        Msg::Windows => {
+            let Response::Windows(mut response) = response else {
+                bail!("unexpected response: expected Workspaces, got {response:?}");
+            };
+            if json {
+                let response =
+                    serde_json::to_string(&response).context("error formatting response")?;
+                println!("{response}");
+                return Ok(());
             }
         }
         Msg::Workspaces => {

@@ -67,7 +67,7 @@ pub enum Response {
     /// Output configuration change result.
     OutputConfigChanged(OutputConfigChanged),
     /// Information about workspaces.
-    Windows(Vec<Window>),
+    Windows(HashMap<u64, Window>),
     /// Information about workspaces.
     Workspaces(Vec<Workspace>),
     /// Information about the focused output.

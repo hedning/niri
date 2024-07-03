@@ -62,6 +62,8 @@ pub enum Msg {
     Outputs,
     /// List workspaces.
     Workspaces,
+    /// List windows.
+    Windows,
     /// Print information about the focused window.
     FocusedWindow,
     /// Print information about the focused output.

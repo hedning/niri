@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -147,7 +148,7 @@ async fn process(ctx: &ClientCtx, request: Request) -> Reply {
         Request::Windows => {
             let (tx, rx) = async_channel::bounded(1);
             ctx.event_loop.insert_idle(move |state| {
-                let mut windows = vec![];
+                let mut windows = HashMap::new();
                 state.niri.layout.with_windows(|mapped, _| {
                     let wl_surface = mapped
                         .window
@@ -164,10 +165,13 @@ async fn process(ctx: &ClientCtx, request: Request) -> Reply {
                             .lock()
                             .unwrap();
 
-                        windows.push(Window {
-                            title: Some(role.title.clone().unwrap_or_default()),
-                            app_id: Some(role.app_id.clone().unwrap_or_default()),
-                        });
+                        windows.insert(
+                            id,
+                            Window {
+                                title: Some(role.title.clone().unwrap_or_default()),
+                                app_id: Some(role.app_id.clone().unwrap_or_default()),
+                            },
+                        );
                     });
                 });
                 let _ = tx.send_blocking(windows);
