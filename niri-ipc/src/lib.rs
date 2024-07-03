@@ -108,6 +108,11 @@ pub enum Action {
     CloseWindow,
     /// Toggle fullscreen on the focused window.
     FullscreenWindow,
+    /// Focus a window by id
+    FocusWindow {
+        /// Get the id from dbus introspection
+        reference: WindowIdArg,
+    },
     /// Focus the column to the left.
     FocusColumnLeft,
     /// Focus the column to the right.
@@ -289,6 +294,10 @@ pub enum WorkspaceReferenceArg {
     /// Name of the workspace.
     Name(String),
 }
+
+/// WindowId
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct WindowIdArg(pub u32);
 
 /// Layout to switch to.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -523,6 +532,17 @@ pub struct Workspace {
     pub output: Option<String>,
     /// Whether the workspace is currently active on its output.
     pub is_active: bool,
+}
+
+impl FromStr for WindowIdArg {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.parse::<u32>() {
+            Ok(id) => Ok(WindowIdArg(id)),
+            Err(err) => Err("foo"),
+        }
+    }
 }
 
 impl FromStr for WorkspaceReferenceArg {

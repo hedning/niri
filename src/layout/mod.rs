@@ -34,7 +34,9 @@ use std::mem;
 use std::rc::Rc;
 use std::time::Duration;
 
-use niri_config::{CenterFocusedColumn, Color, Config, FloatOrInt, Struts, Workspace as WorkspaceConfig};
+use niri_config::{
+    CenterFocusedColumn, Color, Config, FloatOrInt, Struts, Workspace as WorkspaceConfig,
+};
 use niri_ipc::SizeChange;
 use smithay::backend::renderer::element::surface::WaylandSurfaceRenderElement;
 use smithay::backend::renderer::element::Id;
@@ -53,6 +55,7 @@ use crate::render_helpers::solid_color::{SolidColorBuffer, SolidColorRenderEleme
 use crate::render_helpers::texture::TextureBuffer;
 use crate::render_helpers::{BakedBuffer, RenderTarget, SplitElements};
 use crate::utils::{output_size, round_logical_in_physical_max1, ResizeEdge};
+use crate::window::mapped::MappedId;
 use crate::window::ResolvedWindowRules;
 
 pub mod closing_window;

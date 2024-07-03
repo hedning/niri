@@ -34,6 +34,7 @@ use crate::niri::State;
 use crate::ui::screenshot_ui::ScreenshotUi;
 use crate::utils::spawning::spawn;
 use crate::utils::{center, get_monotonic_time, ResizeEdge};
+use crate::window::mapped::MappedId;
 
 pub mod resize_grab;
 pub mod scroll_tracker;
@@ -680,6 +681,19 @@ impl State {
 
                 // FIXME: granular
                 self.niri.queue_redraw_all();
+            }
+            Action::FocusWindow(id) => {
+                let mut window = None;
+                {
+                    self.niri.layout.with_windows(|mapped, _| {
+                        if mapped.id().get() == id {
+                            window = Some(mapped.window.clone());
+                        }
+                    });
+                };
+                if let Some(w) = window {
+                    self.niri.layout.activate_window(&w);
+                }
             }
             Action::FocusWindowDown => {
                 self.niri.layout.focus_down();

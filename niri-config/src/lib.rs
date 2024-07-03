@@ -11,7 +11,9 @@ use bitflags::bitflags;
 use knuffel::errors::DecodeError;
 use knuffel::Decode as _;
 use miette::{miette, Context, IntoDiagnostic, NarratableReportHandler};
-use niri_ipc::{ConfiguredMode, LayoutSwitchTarget, SizeChange, Transform, WorkspaceReferenceArg};
+use niri_ipc::{
+    ConfiguredMode, LayoutSwitchTarget, SizeChange, Transform, WindowIdArg, WorkspaceReferenceArg,
+};
 use regex::Regex;
 use smithay::input::keyboard::keysyms::KEY_NoSymbol;
 use smithay::input::keyboard::xkb::{keysym_from_name, KEYSYM_CASE_INSENSITIVE};
@@ -942,6 +944,7 @@ pub enum Action {
     ScreenshotWindow,
     CloseWindow,
     FullscreenWindow,
+    FocusWindow(#[knuffel(argument)] u32),
     FocusColumnLeft,
     FocusColumnRight,
     FocusColumnFirst,
@@ -1021,6 +1024,7 @@ impl From<niri_ipc::Action> for Action {
             niri_ipc::Action::CloseWindow => Self::CloseWindow,
             niri_ipc::Action::FullscreenWindow => Self::FullscreenWindow,
             niri_ipc::Action::FocusColumnLeft => Self::FocusColumnLeft,
+            niri_ipc::Action::FocusWindow { reference } => Self::FocusWindow(reference.0),
             niri_ipc::Action::FocusColumnRight => Self::FocusColumnRight,
             niri_ipc::Action::FocusColumnFirst => Self::FocusColumnFirst,
             niri_ipc::Action::FocusColumnLast => Self::FocusColumnLast,
