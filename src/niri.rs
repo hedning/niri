@@ -267,7 +267,7 @@ pub struct Niri {
     /// Scancodes of the keys to suppress.
     pub suppressed_keys: HashSet<Keycode>,
     pub bind_cooldown_timers: HashMap<Key, RegistrationToken>,
-    pub bind_repeat_timer: Option<RegistrationToken>,
+    pub bind_repeat_timer: Option<(Key, RegistrationToken)>,
     pub keyboard_focus: KeyboardFocus,
     pub layer_shell_on_demand_focus: Option<LayerSurface>,
     pub previously_focused_window: Option<Window>,

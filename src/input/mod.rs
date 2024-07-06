@@ -324,19 +324,6 @@ impl State {
         let time = Event::time_msec(&event);
         let pressed = event.state() == KeyState::Pressed;
 
-        // Stop bind key repeat on any release. This won't work 100% correctly in cases like:
-        // 1. Press Mod
-        // 2. Press Left (repeat starts)
-        // 3. Press PgDown (new repeat starts)
-        // 4. Release Left (PgDown repeat stops)
-        // But it's good enough for now.
-        // FIXME: handle this properly.
-        if !pressed {
-            if let Some(token) = self.niri.bind_repeat_timer.take() {
-                self.niri.event_loop.remove(token);
-            }
-        }
-
         if pressed {
             self.hide_cursor_if_needed();
         }
@@ -360,6 +347,23 @@ impl State {
                     }
                 }
 
+                if !pressed {
+                    if let Some((key, token)) = &this.niri.bind_repeat_timer {
+                        let mut modifiers = modifiers_from_state(*mods);
+                        if match comp_mod {
+                            CompositorMod::Super => mods.logo,
+                            CompositorMod::Alt => mods.alt,
+                        } {
+                            modifiers |= Modifiers::COMPOSITOR;
+                        }
+
+                        if (key.modifiers & modifiers) != key.modifiers {
+                            this.niri.event_loop.remove(*token);
+                            this.niri.bind_repeat_timer = None;
+                        }
+                    }
+                }
+
                 should_intercept_key(
                     &mut this.niri.suppressed_keys,
                     bindings,
@@ -378,6 +382,12 @@ impl State {
         };
 
         if !pressed {
+            if let Some((key, token)) = self.niri.bind_repeat_timer {
+                if key.eq(&bind.key) {
+                    self.niri.event_loop.remove(token);
+                    self.niri.bind_repeat_timer = None;
+                }
+            };
             return;
         }
 
@@ -387,13 +397,18 @@ impl State {
     }
 
     fn start_key_repeat(&mut self, bind: Bind) {
+        // Stop the previous key repeat if any.
+        if let Some((_key, token)) = self.niri.bind_repeat_timer.take() {
+            self.niri.event_loop.remove(token);
+        }
+
+        // Start the key repeat timer if necessary.
         if !bind.repeat {
             return;
         }
 
-        // Stop the previous key repeat if any.
-        if let Some(token) = self.niri.bind_repeat_timer.take() {
-            self.niri.event_loop.remove(token);
+        if Action::Screenshot == bind.action || self.niri.screenshot_ui.is_open() {
+            return;
         }
 
         let config = self.niri.config.borrow();
@@ -408,6 +423,7 @@ impl State {
         let repeat_timer =
             Timer::from_duration(Duration::from_millis(u64::from(config.repeat_delay)));
 
+        let key = bind.key.clone();
         let token = self
             .niri
             .event_loop
@@ -417,7 +433,7 @@ impl State {
             })
             .unwrap();
 
-        self.niri.bind_repeat_timer = Some(token);
+        self.niri.bind_repeat_timer = Some((key, token));
     }
 
     fn hide_cursor_if_needed(&mut self) {
@@ -542,7 +558,6 @@ impl State {
                 if !self.niri.screenshot_ui.is_open() {
                     return;
                 }
-
                 self.backend.with_primary_renderer(|renderer| {
                     match self.niri.screenshot_ui.capture(renderer) {
                         Ok((size, pixels)) => {
@@ -2548,9 +2563,9 @@ fn should_intercept_key(
             suppressed_keys.insert(key_code);
             FilterResult::Intercept(Some(bind))
         }
-        (_, false) => {
+        (maybe_bind, false) => {
             suppressed_keys.remove(&key_code);
-            FilterResult::Intercept(None)
+            FilterResult::Intercept(maybe_bind)
         }
         (None, true) => FilterResult::Forward,
     }
