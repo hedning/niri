@@ -284,7 +284,7 @@ pub struct Niri {
     /// Button codes of the mouse buttons to suppress.
     pub suppressed_buttons: HashSet<u32>,
     pub bind_cooldown_timers: HashMap<Key, RegistrationToken>,
-    pub bind_repeat_timer: Option<RegistrationToken>,
+    pub bind_repeat_timer: Option<(Key, RegistrationToken)>,
     pub keyboard_focus: KeyboardFocus,
     pub layer_shell_on_demand_focus: Option<LayerSurface>,
     pub previously_focused_window: Option<Window>,
