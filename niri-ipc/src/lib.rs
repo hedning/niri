@@ -206,6 +206,12 @@ pub enum Action {
     },
     /// Focus the previously focused window.
     FocusWindowPrevious {},
+    /// Focus a window by id
+    GetWindow {
+        /// Id of the window to focus.
+        #[cfg_attr(feature = "clap", arg(long))]
+        id: u64,
+    },
     /// Focus the column to the left.
     FocusColumnLeft {},
     /// Focus the column to the right.

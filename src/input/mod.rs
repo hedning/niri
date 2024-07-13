@@ -884,6 +884,28 @@ impl State {
                 // FIXME: granular
                 self.niri.queue_redraw_all();
             }
+            Action::GetWindow(id) => {
+                let window = {
+                    let mut window = None;
+                    self.niri.layout.with_windows(|mapped, _, _| {
+                        if mapped.id().get() == id {
+                            window = Some(mapped.window.clone());
+                        }
+                    });
+                    if let Some(w) = window {
+                        w
+                    } else {
+                        return;
+                    }
+                };
+                let Some(output) = self.niri.layout.active_output() else {
+                    return;
+                };
+                self.niri
+                    .layout
+                    .move_window_to_output(&window, &output.clone());
+            }
+
             Action::FocusWindowDown => {
                 self.niri.layout.focus_down();
                 self.maybe_warp_cursor_to_focus();
