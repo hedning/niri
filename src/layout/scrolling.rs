@@ -752,13 +752,16 @@ impl<W: LayoutElement> ScrollingSpace<W> {
         );
 
         if self.active_column_idx != idx {
-            self.active_column_idx = idx;
-
-            // A different column was activated; reset the flag.
-            self.activate_prev_column_on_removal = None;
-            self.view_offset_before_fullscreen = None;
-            self.interactive_resize = None;
+            self.activate_column_no_animation(idx)
         }
+    }
+
+    fn activate_column_no_animation(&mut self, idx: usize) {
+        self.active_column_idx = idx;
+        // A different column was activated; reset the flag.
+        self.activate_prev_column_on_removal = None;
+        self.view_offset_before_fullscreen = None;
+        self.interactive_resize = None;
     }
 
     pub(super) fn insert_position(&self, pos: Point<f64, Logical>) -> InsertPosition {
@@ -1355,16 +1358,18 @@ impl<W: LayoutElement> ScrollingSpace<W> {
         (from_view_offset - new_view_offset).abs() / self.working_area.size.w
     }
 
-    pub fn activate_window(&mut self, window: &W::Id) -> bool {
+    pub fn activate_window(&mut self, window: &W::Id, animate: bool) -> bool {
         let column_idx = self.columns.iter().position(|col| col.contains(window));
         let Some(column_idx) = column_idx else {
             return false;
         };
         let column = &mut self.columns[column_idx];
-
         column.activate_window(window);
-        self.activate_column(column_idx);
-
+        if animate {
+            self.activate_column(column_idx);
+        } else {
+            self.activate_column_no_animation(column_idx);
+        }
         true
     }
 
