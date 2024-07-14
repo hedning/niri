@@ -313,6 +313,8 @@ pub struct Niri {
     pub is_fdo_idle_inhibited: Arc<AtomicBool>,
     pub keyboard_shortcuts_inhibiting_surfaces: HashMap<WlSurface, KeyboardShortcutsInhibitor>,
 
+    pub mru: Vec<MappedId>,
+
     pub cursor_manager: CursorManager,
     pub cursor_texture_cache: CursorTextureCache,
     pub cursor_shape_manager_state: CursorShapeManagerState,
@@ -1166,6 +1168,16 @@ impl State {
             {
                 if let Some((mapped, _)) = self.niri.layout.find_window_and_output_mut(surface) {
                     mapped.set_is_focused(true);
+                    {
+                        let mapped_id = mapped.id();
+                        self.niri.mru.retain(|id| {
+                            if *id == mapped_id {
+                                return false;
+                            }
+                            return true;
+                        });
+                        self.niri.mru.push(mapped.id());
+                    }
                 }
             }
 
@@ -2525,6 +2537,7 @@ impl Niri {
             idle_inhibiting_surfaces: HashSet::new(),
             is_fdo_idle_inhibited: Arc::new(AtomicBool::new(false)),
             keyboard_shortcuts_inhibiting_surfaces: HashMap::new(),
+            mru: vec![],
             cursor_manager,
             cursor_texture_cache: Default::default(),
             cursor_shape_manager_state,
