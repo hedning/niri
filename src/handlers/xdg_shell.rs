@@ -588,6 +588,7 @@ impl XdgShellHandler for State {
             error!("toplevel missing from both unmapped_windows and layout");
             return;
         };
+        let mapped_id = mapped.id();
         let window = mapped.window.clone();
         let output = output.clone();
 
@@ -621,6 +622,12 @@ impl XdgShellHandler for State {
             transaction.register_deadline_timer(&self.niri.event_loop);
         }
 
+        self.niri.mru.retain(|id| {
+            if *id == mapped_id {
+                return false;
+            }
+            return true;
+        });
         if was_active {
             self.maybe_warp_cursor_to_focus();
         }

@@ -211,6 +211,7 @@ impl CompositorHandler for State {
 
             // This is a commit of a previously-mapped root or a non-toplevel root.
             if let Some((mapped, output)) = self.niri.layout.find_window_and_output(surface) {
+                let mapped_id = mapped.id();
                 let window = mapped.window.clone();
                 let output = output.clone();
 
@@ -259,6 +260,12 @@ impl CompositorHandler for State {
                     if !transaction.is_last() {
                         transaction.register_deadline_timer(&self.niri.event_loop);
                     }
+                    self.niri.mru.retain(|id| {
+                        if *id == mapped_id {
+                            return false;
+                        }
+                        return true;
+                    });
 
                     if was_active {
                         self.maybe_warp_cursor_to_focus();
