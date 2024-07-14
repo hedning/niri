@@ -153,6 +153,7 @@ use crate::utils::{
     center, center_f64, get_monotonic_time, ipc_transform_to_smithay, logical_output,
     make_screenshot_path, output_matches_name, output_size, send_scale_transform, write_png_rgba8,
 };
+use crate::window::mapped::MappedId;
 use crate::window::{InitialConfigureState, Mapped, ResolvedWindowRules, Unmapped, WindowRef};
 
 const CLEAR_COLOR_LOCKED: [f32; 4] = [0.3, 0.1, 0.1, 1.];
@@ -290,6 +291,8 @@ pub struct Niri {
     pub previously_focused_window: Option<Window>,
     pub idle_inhibiting_surfaces: HashSet<WlSurface>,
     pub is_fdo_idle_inhibited: Arc<AtomicBool>,
+
+    pub mru: Vec<MappedId>,
 
     pub cursor_manager: CursorManager,
     pub cursor_texture_cache: CursorTextureCache,
@@ -974,6 +977,16 @@ impl State {
             {
                 if let Some((mapped, _)) = self.niri.layout.find_window_and_output_mut(surface) {
                     mapped.set_is_focused(true);
+                    {
+                        let mapped_id = mapped.id();
+                        self.niri.mru.retain(|id| {
+                            if *id == mapped_id {
+                                return false;
+                            }
+                            return true;
+                        });
+                        self.niri.mru.push(mapped.id());
+                    }
                 }
             }
 
@@ -2044,6 +2057,7 @@ impl Niri {
             previously_focused_window: None,
             idle_inhibiting_surfaces: HashSet::new(),
             is_fdo_idle_inhibited: Arc::new(AtomicBool::new(false)),
+            mru: vec![],
             cursor_manager,
             cursor_texture_cache: Default::default(),
             cursor_shape_manager_state,
