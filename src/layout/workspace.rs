@@ -1641,11 +1641,11 @@ impl<W: LayoutElement> Workspace<W> {
         self.windows().any(|win| win.is_urgent())
     }
 
-    pub fn activate_window(&mut self, window: &W::Id) -> bool {
+    pub fn activate_window(&mut self, window: &W::Id, animate: bool) -> bool {
         if self.floating.activate_window(window) {
             self.floating_is_active = FloatingActive::Yes;
             true
-        } else if self.scrolling.activate_window(window) {
+        } else if self.scrolling.activate_window(window, animate) {
             self.floating_is_active = FloatingActive::No;
             true
         } else {
@@ -1657,7 +1657,7 @@ impl<W: LayoutElement> Workspace<W> {
         if self.floating.activate_window_without_raising(window) {
             self.floating_is_active = FloatingActive::Yes;
             true
-        } else if self.scrolling.activate_window(window) {
+        } else if self.scrolling.activate_window(window, true) {
             self.floating_is_active = match self.floating_is_active {
                 FloatingActive::No => FloatingActive::No,
                 FloatingActive::NoButRaised => FloatingActive::NoButRaised,

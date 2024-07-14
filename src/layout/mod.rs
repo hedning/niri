@@ -1630,10 +1630,19 @@ impl<W: LayoutElement> Layout<W> {
             return;
         };
 
+        let active_workspace_idx = monitors[*active_monitor_idx].active_workspace_idx;
+
         for (monitor_idx, mon) in monitors.iter_mut().enumerate() {
             for (workspace_idx, ws) in mon.workspaces.iter_mut().enumerate() {
-                if ws.activate_window(window) {
+                if ws.has_window(window) {
                     *active_monitor_idx = monitor_idx;
+                    if workspace_idx == active_workspace_idx {
+                        // Scroll windows if we're on the same workspace
+                        ws.activate_window(window, true);
+                    } else {
+                        // otherwise go directly to the window, ala. go to reference in editors
+                        ws.activate_window(window, false);
+                    }
 
                     // If currently in the middle of a vertical swipe between the target workspace
                     // and some other, don't switch the workspace.
@@ -2893,7 +2902,7 @@ impl<W: LayoutElement> Layout<W> {
                                 DndHoldTarget::Window(id) => mon
                                     .workspaces
                                     .iter_mut()
-                                    .position(|ws| ws.activate_window(&id))
+                                    .position(|ws| ws.activate_window(&id, true))
                                     .unwrap(),
                                 DndHoldTarget::Workspace(id) => {
                                     mon.workspaces.iter().position(|ws| ws.id() == id).unwrap()
@@ -4375,7 +4384,7 @@ impl<W: LayoutElement> Layout<W> {
                     ws.dnd_scroll_gesture_end();
 
                     if moved_tile_was_active {
-                        ws.activate_window(&window_id);
+                        ws.activate_window(&window_id, true);
                     }
                 }
 
