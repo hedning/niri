@@ -1060,6 +1060,10 @@ impl<W: LayoutElement> Workspace<W> {
             config,
         );
 
+        self.activate_column_no_animation(idx)
+    }
+
+    fn activate_column_no_animation(&mut self, idx: usize) {
         self.active_column_idx = idx;
 
         // A different column was activated; reset the flag.
@@ -1625,7 +1629,7 @@ impl<W: LayoutElement> Workspace<W> {
         (from_view_offset - new_view_offset).abs() / self.working_area.size.w
     }
 
-    pub fn activate_window(&mut self, window: &W::Id) {
+    pub fn activate_window(&mut self, window: &W::Id, animate: bool) {
         let column_idx = self
             .columns
             .iter()
@@ -1634,7 +1638,11 @@ impl<W: LayoutElement> Workspace<W> {
         let column = &mut self.columns[column_idx];
 
         column.activate_window(window);
-        self.activate_column(column_idx);
+        if animate {
+            self.activate_column(column_idx);
+        } else {
+            self.activate_column_no_animation(column_idx);
+        }
     }
 
     pub fn store_unmap_snapshot_if_empty(&mut self, renderer: &mut GlesRenderer, window: &W::Id) {
