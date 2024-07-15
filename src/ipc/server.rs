@@ -20,7 +20,9 @@ use smithay::desktop::layer_map_for_output;
 use smithay::reexports::calloop::generic::Generic;
 use smithay::reexports::calloop::{Interest, LoopHandle, Mode, PostAction};
 use smithay::reexports::rustix::fs::unlink;
+use smithay::wayland::compositor::with_states;
 use smithay::wayland::shell::wlr_layer::{KeyboardInteractivity, Layer};
+use smithay::wayland::shell::xdg::XdgToplevelSurfaceData;
 
 use crate::backend::IpcOutputMap;
 use crate::layout::workspace::WorkspaceId;
@@ -252,8 +254,62 @@ async fn process(ctx: &ClientCtx, request: Request) -> Reply {
             Response::Workspaces(workspaces)
         }
         Request::Windows => {
-            let state = ctx.event_stream_state.borrow();
-            let windows = state.windows.windows.values().cloned().collect();
+            let (tx, rx) = async_channel::bounded(1);
+            ctx.event_loop.insert_idle(move |state| {
+                let mut windows = Vec::new();
+                state.niri.layout.with_windows(|mapped, _, workspace_id| {
+                    let Some(workspace_id) = workspace_id else {
+                        return;
+                    };
+                    let wl_surface = mapped
+                        .window
+                        .toplevel()
+                        .expect("no X11 support")
+                        .wl_surface();
+
+                    with_states(wl_surface, |states| {
+                        let role = states
+                            .data_map
+                            .get::<XdgToplevelSurfaceData>()
+                            .unwrap()
+                            .lock()
+                            .unwrap();
+
+                        windows.push(niri_ipc::Window {
+                            id: mapped.id().get(),
+                            title: role.title.clone(),
+                            app_id: role.app_id.clone(),
+                            pid: mapped.credentials().map(|c| c.pid),
+                            workspace_id: Some(workspace_id.get()),
+                            is_focused: mapped.is_focused(),
+                        });
+                    });
+                });
+                windows.sort_by_key(|w| {
+                    // ugh, there has to be a better way to this than going the whole iter().enumerate().find_map thing
+                    if let Some(i) =
+                        state
+                            .niri
+                            .mru
+                            .iter()
+                            .enumerate()
+                            .find_map(|(i, id_ordered)| {
+                                if id_ordered.get() as u64 == w.id {
+                                    return Some(i);
+                                }
+                                return None;
+                            })
+                    {
+                        return i;
+                    } else {
+                        debug!("shouldn't happen");
+                        return 0;
+                    };
+                });
+                let _ = tx.send_blocking(windows);
+            });
+            let result = rx.recv().await;
+            let windows = result.map_err(|_| String::from("error getting workspace info"))?;
             Response::Windows(windows)
         }
         Request::Layers => {
