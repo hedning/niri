@@ -3638,6 +3638,75 @@ impl<W: LayoutElement> Layout<W> {
         }
     }
 
+    /// Activate the workspace, and move it to the current monitor if not already there
+    pub fn move_workspace_by_id_to_active(&mut self, id: WorkspaceId) {
+        // fixme: deduplicate move_workspace_to_output
+        let MonitorSet::Normal {
+            monitors,
+            active_monitor_idx,
+            ..
+        } = &mut self.monitor_set
+        else {
+            return;
+        };
+        // blehh, this is really boilerplaty
+        // zig named blocks are bit bleh, but at least you can break from anywhere,
+        // so you're able to return from a for loop..., no idea why they didn't just go for a for else?
+        let Some((from_idx, ws_idx)) =
+            monitors
+                .iter()
+                .enumerate()
+                .find_map(|(from_idx, from_monitor)| {
+                    from_monitor
+                        .workspaces
+                        .iter()
+                        .enumerate()
+                        .find_map(|(idx, ws)| {
+                            if ws.id() == id {
+                                return Some((from_idx, idx));
+                            }
+                            return None;
+                        })
+                })
+        else {
+            return;
+        };
+        let from_monitor = &mut monitors[from_idx];
+        if from_monitor.active_workspace_idx == ws_idx {}
+        if ws_idx == from_monitor.workspaces.len() - 1 {
+            // Insert a new empty workspace.
+            let ws = Workspace::new(
+                from_monitor.output.clone(),
+                self.clock.clone(),
+                from_monitor.options.clone(),
+            );
+            from_monitor.workspaces.push(ws);
+        }
+        let mut ws = from_monitor.workspaces.remove(ws_idx);
+        if ws_idx == from_monitor.active_workspace_idx {
+            from_monitor.active_workspace_idx = ws_idx.saturating_sub(1);
+        }
+        from_monitor.workspace_switch = None;
+        from_monitor.clean_up_workspaces();
+
+        let target = &mut monitors[*active_monitor_idx];
+        let output = &target.output;
+
+        ws.set_output(Some(output.clone()));
+        ws.original_output = OutputId::new(output);
+
+        target.previous_workspace_id = Some(target.workspaces[target.active_workspace_idx].id());
+
+        // Insert the workspace after the currently active one. Unless the currently active one is
+        // the last empty workspace, then insert before.
+        let target_ws_idx = min(target.active_workspace_idx + 1, target.workspaces.len() - 1);
+        target.workspaces.insert(target_ws_idx, ws);
+        target.active_workspace_idx = target_ws_idx;
+        target.workspace_switch = None;
+        target.clean_up_workspaces();
+        self.switch_workspace(target_ws_idx)
+    }
+
     pub fn move_workspace_to_output(&mut self, output: &Output) -> bool {
         let MonitorSet::Normal {
             monitors,
