@@ -308,6 +308,12 @@ pub enum Action {
         #[cfg_attr(feature = "clap", arg())]
         reference: WorkspaceReferenceArg,
     },
+    /// Focus a workspace by reference (index or name).
+    GetWorkspace {
+        /// Reference (index or name) of the workspace to focus.
+        #[cfg_attr(feature = "clap", arg())]
+        reference: WorkspaceReferenceArg,
+    },
     /// Focus the previous workspace.
     FocusWorkspacePrevious {},
     /// Move the focused window to the workspace below.

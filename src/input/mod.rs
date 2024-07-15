@@ -1088,6 +1088,20 @@ impl State {
                 // FIXME: granular
                 self.niri.queue_redraw_all();
             }
+            Action::GetWorkspace(reference) => {
+                // ugh,
+                if let Some((output, idx)) = self.niri.find_output_and_workspace_index(reference) {
+                    if let Some(output) = output {
+                        let Some(monitor) = self.niri.layout.monitor_for_output(&output) else {
+                            return;
+                        };
+                        let id = monitor.workspaces[idx].id();
+                        self.niri.layout.move_workspace_by_id_to_active(id)
+                    } else {
+                        self.niri.layout.switch_workspace(idx)
+                    };
+                };
+            }
             Action::FocusWorkspace(reference) => {
                 if let Some((mut output, index)) =
                     self.niri.find_output_and_workspace_index(reference)
