@@ -1171,6 +1171,7 @@ pub enum Action {
     FocusWindowPrevious,
     #[knuffel(skip)]
     GetWindow(u64),
+    FocusWindowPreviousOnWorkspace,
     FocusColumnLeft,
     FocusColumnRight,
     FocusColumnFirst,

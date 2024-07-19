@@ -884,6 +884,22 @@ impl State {
                 // FIXME: granular
                 self.niri.queue_redraw_all();
             }
+            Action::FocusWindowPreviousOnWorkspace => {
+                let Some(ws) = self.niri.layout.active_workspace() else {
+                    return;
+                };
+                // The first id in the mru is the active window so skip that
+                if let Some(window) = self.niri.mru.iter().rev().skip(1).find_map(|id| {
+                    for mapped in ws.windows() {
+                        if *id == mapped.id() {
+                            return Some(mapped.window.clone());
+                        }
+                    }
+                    None
+                }) {
+                    self.niri.layout.activate_window(&window);
+                };
+            }
             Action::GetWindow(id) => {
                 let window = {
                     let mut window = None;
