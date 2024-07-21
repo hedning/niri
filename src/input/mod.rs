@@ -1369,6 +1369,7 @@ impl State {
     }
 
     fn on_pointer_motion<I: InputBackend>(&mut self, event: I::PointerMotionEvent) {
+        let _span = tracy_client::span!("State::on_pointer_motion");
         // We need an output to be able to move the pointer.
         if self.niri.global_space.outputs().next().is_none() {
             return;
@@ -1561,6 +1562,7 @@ impl State {
         &mut self,
         event: I::PointerMotionAbsoluteEvent,
     ) {
+        let _span = tracy_client::span!("State::on_pointer_motion");
         let Some(output_geo) = self.global_bounding_rectangle() else {
             return;
         };
