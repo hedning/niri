@@ -337,6 +337,7 @@ pub struct Niri {
 
     pub debug_draw_opaque_regions: bool,
     pub debug_draw_damage: bool,
+    pub debug_input: bool,
 
     #[cfg(feature = "dbus")]
     pub dbus: Option<crate::dbus::DBusServers>,
@@ -2086,6 +2087,7 @@ impl Niri {
 
             debug_draw_opaque_regions: false,
             debug_draw_damage: false,
+            debug_input: false,
 
             #[cfg(feature = "dbus")]
             dbus: None,
