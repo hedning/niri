@@ -535,6 +535,10 @@ impl State {
             Action::DebugToggleDamage => {
                 self.niri.debug_toggle_damage();
             }
+            Action::DebugToggleInput => {
+                self.niri.debug_input = !self.niri.debug_input;
+            }
+
             Action::Spawn(command) => {
                 let (token, _) = self.niri.activation_state.create_external_token(None);
                 spawn(command, Some(token.clone()));
@@ -1377,7 +1381,11 @@ impl State {
         let pos = pointer.current_location();
 
         // We have an output, so we can compute the new location and focus.
-        let mut new_pos = pos + event.delta();
+        let delta = event.delta();
+        let mut new_pos = pos + delta;
+        if self.niri.debug_input {
+            debug!("delta {delta:?}");
+        }
 
         // We received an event for the regular pointer, so show it now.
         self.niri.pointer_hidden = false;
@@ -1558,6 +1566,9 @@ impl State {
         };
 
         let pos = event.position_transformed(output_geo.size) + output_geo.loc.to_f64();
+        if self.niri.debug_input {
+            debug!("pos {pos:?}");
+        }
 
         let serial = SERIAL_COUNTER.next_serial();
 

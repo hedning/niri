@@ -1145,6 +1145,7 @@ pub enum Action {
     PowerOffMonitors,
     PowerOnMonitors,
     ToggleDebugTint,
+    DebugToggleInput,
     DebugToggleOpaqueRegions,
     DebugToggleDamage,
     Spawn(#[knuffel(arguments)] Vec<String>),
