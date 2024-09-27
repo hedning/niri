@@ -1650,7 +1650,7 @@ impl<W: LayoutElement> Layout<W> {
                         Some(WorkspaceSwitch::Gesture(gesture))
                             if gesture.current_idx.floor() == workspace_idx as f64
                                 || gesture.current_idx.ceil() == workspace_idx as f64 => {}
-                        _ => mon.switch_workspace(workspace_idx),
+                        _ => mon.switch_workspace(workspace_idx, true),
                     }
 
                     return;
@@ -1686,7 +1686,7 @@ impl<W: LayoutElement> Layout<W> {
                         Some(WorkspaceSwitch::Gesture(gesture))
                             if gesture.current_idx.floor() == workspace_idx as f64
                                 || gesture.current_idx.ceil() == workspace_idx as f64 => {}
-                        _ => mon.switch_workspace(workspace_idx),
+                        _ => mon.switch_workspace(workspace_idx, false),
                     }
 
                     return;
@@ -2292,7 +2292,7 @@ impl<W: LayoutElement> Layout<W> {
         let Some(monitor) = self.active_monitor() else {
             return;
         };
-        monitor.switch_workspace(idx);
+        monitor.switch_workspace(idx, false);
     }
 
     pub fn switch_workspace_auto_back_and_forth(&mut self, idx: usize) {
