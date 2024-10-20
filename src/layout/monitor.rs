@@ -144,6 +144,11 @@ impl<W: LayoutElement> Monitor<W> {
         &self.workspaces[self.active_workspace_idx]
     }
 
+    // ugh, why not just expose the vector...
+    pub fn workspace_ref(&self, idx: usize) -> &Workspace<W> {
+        &self.workspaces[idx]
+    }
+
     pub fn find_named_workspace(&self, workspace_name: &str) -> Option<&Workspace<W>> {
         self.workspaces.iter().find(|ws| {
             ws.name

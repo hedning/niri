@@ -1115,7 +1115,7 @@ impl State {
                         let Some(monitor) = self.niri.layout.monitor_for_output(&output) else {
                             return;
                         };
-                        let id = monitor.workspaces[idx].id();
+                        let id = monitor.workspace_ref(idx).id();
                         self.niri.layout.move_workspace_by_id_to_active(id)
                     } else {
                         self.niri.layout.switch_workspace(idx)
