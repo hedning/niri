@@ -1910,7 +1910,7 @@ impl State {
                 let window = mapped.window.clone();
 
                 // Check if we need to start an interactive move.
-                if button == Some(MouseButton::Left) && !pointer.is_grabbed() {
+                if button == Some(MouseButton::Middle) && !pointer.is_grabbed() {
                     let mod_down = match self.backend.mod_key() {
                         CompositorMod::Super => mods.logo,
                         CompositorMod::Alt => mods.alt,
