@@ -206,7 +206,7 @@ pub enum Action {
     },
     /// Focus the previously focused window.
     FocusWindowPrevious {},
-    /// Focus a window by id
+    /// Fetch a window by id
     GetWindow {
         /// Id of the window to focus.
         #[cfg_attr(feature = "clap", arg(long))]
