@@ -724,8 +724,17 @@ impl State {
                 self.niri.queue_redraw_all();
             }
             Action::FocusWindowPrevious => {
-                if let Some(window) = self.niri.previously_focused_window.clone() {
-                    self.focus_window(&window);
+                let id = self.niri.mru[self.niri.mru.len() - 2];
+                let mut window = None;
+                {
+                    self.niri.layout.with_windows(|mapped, _, _| {
+                        if mapped.id() == id {
+                            window = Some(mapped.window.clone());
+                        }
+                    });
+                };
+                if let Some(window) = window {
+                    self.niri.layout.activate_window(&window);
                 }
             }
             Action::SwitchLayout(action) => {
