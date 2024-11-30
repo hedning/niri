@@ -2547,7 +2547,7 @@ impl State {
                 }
             }
 
-            if button == Some(MouseButton::Middle) && !pointer.is_grabbed() {
+            if button == Some(MouseButton::Left) && !pointer.is_grabbed() {
                 let mod_down = modifiers_from_state(mods).contains(mod_key.to_modifiers());
                 if mod_down {
                     let output_ws = if is_overview_open {
@@ -2592,7 +2592,7 @@ impl State {
                 let window = mapped.window.clone();
 
                 // Check if we need to start an interactive move.
-                if button == Some(MouseButton::Left) && !pointer.is_grabbed() {
+                if button == Some(MouseButton::Middle) && !pointer.is_grabbed() {
                     let mod_down = modifiers_from_state(mods).contains(mod_key.to_modifiers());
                     if is_overview_open || mod_down {
                         let location = pointer.current_location();
