@@ -2944,7 +2944,7 @@ impl State {
                         let start_data = PointerOrTouchStartData::Pointer(start_data);
                         let icon = CursorIcon::Grabbing;
                         if let Some(grab) =
-                            MoveGrab::new(self, start_data, window.clone(), false, Some(icon))
+                            MoveGrab::new(self, start_data, window.clone(), true, Some(icon))
                         {
                             pointer.set_grab(self, grab, serial, Focus::Clear);
 
